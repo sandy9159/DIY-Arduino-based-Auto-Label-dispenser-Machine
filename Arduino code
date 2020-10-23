@@ -1,0 +1,105 @@
+#include <Wire.h>     
+#include "rgb_lcd.h" 
+rgb_lcd lcd;
+#include <Arduino.h>
+#include "BasicStepperDriver.h"
+
+#define MOTOR_STEPS 200
+#define RPM 400
+
+#define DIR A0
+#define STEP A1
+
+
+
+#define MICROSTEPS 16
+BasicStepperDriver stepper(MOTOR_STEPS, DIR, STEP);
+
+
+int value = 0;
+int IR = 10;
+int PB = A2; 
+int SW = A3;
+int knob = 2;
+int val = 0;
+int currentstate = 0;
+int laststate = 0;
+int state = 0;
+void setup() {
+  stepper.begin(RPM, MICROSTEPS);
+ Serial.begin(9600);
+ lcd.begin(16, 2);
+lcd.setCursor(0, 0);
+ lcd.print ("LABEL DISPENSER"); 
+lcd.setCursor(0, 1);
+lcd.print ("MACHINE");  
+pinMode(knob, INPUT_PULLUP);
+pinMode(PB,INPUT_PULLUP);
+pinMode(SW,INPUT_PULLUP);
+pinMode(IR,INPUT);
+delay(2000);
+stepper.rotate(700);
+lcd.clear();
+}
+
+void loop() {
+
+if (state == 0){
+lcd.setCursor(0, 0);
+lcd.print ("  LABEL LENGTH");
+lcd.setCursor(0, 1);
+lcd.print ("    MM  = ");
+lcd.setCursor(11, 1);
+  currentstate = digitalRead(knob);
+
+  if (currentstate != laststate){
+    val++;
+
+lcd.print (val/2);
+  laststate = currentstate;
+    
+  }
+
+}
+if (!digitalRead(PB) && state == 0){
+  delay(100);
+  state = 1;
+lcd.clear();
+lcd.setCursor(0, 0);
+lcd.print ("SET LENGTH =");
+lcd.setCursor(13, 0);
+lcd.print (val/2);
+lcd.setCursor(0, 1);
+lcd.print ("PRESS TO START");
+
+  
+}
+
+if (state == 1 && !digitalRead(PB)){
+  state = 3;
+  lcd.clear();
+  lcd.setCursor(0, 0);
+lcd.print ("RUNNING....");
+}
+
+
+if (state == 3){
+    lcd.setCursor(0, 1);
+lcd.print ("COUNTER = ");
+lcd.setCursor(12, 1);
+
+if ( digitalRead(IR)){
+  delay(200);  
+  STEPPER();
+}
+
+}
+
+
+}
+
+void STEPPER (){
+  lcd.print (value);
+  stepper.rotate(900);
+  value++;
+}
